@@ -34,9 +34,16 @@ class UserController {
       name: Yup.string(),
       email: Yup.string().email(),
       oldPassword: Yup.string().min(6),
-      password: Yup.string().min(6).when('oldPassword', (oldPassword, field) =>
-
-      )
+      password: Yup.string()
+        .min(6)
+        .when('oldPassword', (oldPassword, field) =>
+          oldPassword ? field.required() : field
+        ),
+      passwordConfirmation: Yup.string()
+        .min(6)
+        .when('password', (password, field) =>
+          password ? field.required().oneOf([Yup.ref('password')]) : field
+        ),
     });
 
     if (!(await schema.isValid(req.body))) {
@@ -51,7 +58,9 @@ class UserController {
       const UserExists = await User.findOne({ where: { email } });
 
       if (UserExists) {
-        return res.status(400).json({ error: 'User Already Exists' });
+        return res
+          .status(400)
+          .json({ error: 'Email already taken, please try another one' });
       }
     }
 
